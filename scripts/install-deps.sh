@@ -14,7 +14,7 @@ brew update
 # Check if Supabase CLI is installed
 if brew list supabase/tap/supabase &>/dev/null; then
   echo "Upgrading Supabase CLI..."
-  brew upgrade supabase/tap/supabase
+  brew upgrade supabase
 else
   echo "Installing Supabase CLI..."
   brew install supabase/tap/supabase

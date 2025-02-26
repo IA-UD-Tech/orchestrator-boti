@@ -41,6 +41,9 @@ tasks:
       REBUILD: false
     cmds:
       - |
+        echo -e "${GREEN}Starting supabase...${NC}"
+        supabase start
+      - |
         if [ "$REBUILD" = true ]; then
         echo -e "${GREEN}Rebuilding backend...${NC}"
         cd ../backend-boti && docker-compose up -d --build
@@ -67,3 +70,9 @@ tasks:
       - |
         echo -e "${RED}Stopping backend...${NC}"
         cd ../backend-boti && docker-compose down
+      - |
+        echo -e "${RED}Stopping supabase ...${NC}"
+        supabase stop
+      - |
+        echo -e "${RED}Removing common network...${NC}"
+        docker network rm boti-net
