@@ -1,5 +1,6 @@
 version: '3'
 
+#TODO: Break up the tasks so you can select which to restart or rebuild
 vars:
   GREEN: "\033[0;32m"
   BLUE: "\033[0;34m"
@@ -46,18 +47,19 @@ tasks:
       - |
         if [ "$REBUILD" = true ]; then
         echo -e "${GREEN}Rebuilding backend...${NC}"
-        cd ../backend-boti && docker-compose up -d --build
+        cd ../backend-boti && docker compose up -d --build
         else
         echo -e "${GREEN}Starting backend...${NC}"
-        cd ../backend-boti && docker-compose up -d
+        pwd
+        cd ../backend-boti && docker compose up -d
         fi
       - |
         if [ "$REBUILD" = true ]; then
         echo -e "${GREEN}Rebuilding frontend...${NC}"
-        cd ../frontend-boti && docker-compose up -d --build
+        cd ../frontend-boti && docker compose up -d --build
         else
         echo -e "${GREEN}Starting frontend...${NC}"
-        cd ../frontend-boti && docker-compose up -d
+        cd ../frontend-boti && docker compose up -d
         fi
 
   stop:
@@ -66,13 +68,13 @@ tasks:
     cmds:
       - |
         echo -e "${RED}Stopping frontend...${NC}"
-        cd ../frontend-boti && docker-compose down
+        cd ../frontend-boti && docker compose down
       - |
         echo -e "${RED}Stopping backend...${NC}"
-        cd ../backend-boti && docker-compose down
+        cd ../backend-boti && docker compose down
       - |
         echo -e "${RED}Stopping supabase ...${NC}"
         supabase stop
       - |
         echo -e "${RED}Removing common network...${NC}"
-        docker network rm boti-net
+        docker network rm boti-net || true

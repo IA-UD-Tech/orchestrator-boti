@@ -2,158 +2,158 @@ create extension vector
 with
   schema extensions;
 
-CREATE TYPE "tipos_permisos" AS ENUM (
-  'Administrador',
+CREATE TYPE "permission_types" AS ENUM (
+  'Administrator',
   'Manager',
-  'Usuario'
+  'User'
 );
 
-CREATE TYPE "tipo_remitente" AS ENUM (
-  'Usuario',
-  'Agente',
-  'Sistema'
+CREATE TYPE "sender_type" AS ENUM (
+  'User',
+  'Agent',
+  'System'
 );
 
-CREATE TYPE "estado_conversacion" AS ENUM (
-  'Activa',
-  'Finalizada',
-  'En_Pausa',
-  'Cancelada'
+CREATE TYPE "conversation_status" AS ENUM (
+  'Active',
+  'Finished',
+  'Paused',
+  'Cancelled'
 );
 
-CREATE TABLE "usuarios" (
-  "id_usuario" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+CREATE TABLE "users" (
+  "id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
   "email" VARCHAR(255) UNIQUE NOT NULL,
-  "nombre" VARCHAR(255) NOT NULL,
-  "estado" BOOLEAN DEFAULT true,
-  "fecha_creacion" TIMESTAMP DEFAULT (now()),
-  "ultima_conexion" TIMESTAMP
+  "name" VARCHAR(255) NOT NULL,
+  "status" BOOLEAN DEFAULT true,
+  "created_at" TIMESTAMP DEFAULT (now()),
+  "last_login" TIMESTAMP
 );
 
 CREATE TABLE "roles" (
-  "id_rol" SERIAL PRIMARY KEY,
-  "nombre" VARCHAR(50) UNIQUE NOT NULL,
-  "descripcion" TEXT
+  "id" SERIAL PRIMARY KEY,
+  "name" VARCHAR(50) UNIQUE NOT NULL,
+  "description" TEXT
 );
 
-CREATE TABLE "usuario_rol" (
-  "id_usuario" UUID,
-  "id_rol" INT,
-  "fecha_asignacion" TIMESTAMP DEFAULT (now()),
-  PRIMARY KEY ("id_usuario", "id_rol")
+CREATE TABLE "user_role" (
+  "user_id" UUID,
+  "role_id" INT,
+  "assigned_at" TIMESTAMP DEFAULT (now()),
+  PRIMARY KEY ("user_id", "role_id")
 );
 
-CREATE TABLE "herramientas" (
-  "id_herramienta" SERIAL PRIMARY KEY,
-  "nombre" VARCHAR(100) UNIQUE NOT NULL,
-  "tipo" VARCHAR(50),
-  "descripcion" TEXT,
-  "id_creador" UUID,
-  "fecha_creacion" TIMESTAMP DEFAULT (now())
+CREATE TABLE "tools" (
+  "id" SERIAL PRIMARY KEY,
+  "name" VARCHAR(100) UNIQUE NOT NULL,
+  "type" VARCHAR(50),
+  "description" TEXT,
+  "creator_id" UUID,
+  "created_at" TIMESTAMP DEFAULT (now())
 );
 
-CREATE TABLE "agentes" (
-  "id_agente" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "nombre" VARCHAR(100) NOT NULL,
-  "descripcion" TEXT,
-  "tipo" VARCHAR(50),
-  "id_herramienta" INT,
-  "fecha_creacion" TIMESTAMP DEFAULT (now())
+CREATE TABLE "agents" (
+  "id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+  "name" VARCHAR(100) NOT NULL,
+  "description" TEXT,
+  "type" VARCHAR(50),
+  "tool_id" INT,
+  "created_at" TIMESTAMP DEFAULT (now())
 );
 
-CREATE TABLE "conversaciones" (
-  "id_conversacion" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "id_usuario" UUID,
-  "id_herramienta" INT,
-  "fecha_inicio" TIMESTAMP DEFAULT (now()),
-  "fecha_fin" TIMESTAMP,
-  "estado" estado_conversacion,
-  "modo" VARCHAR(20) DEFAULT 'Estándar',
-  "costo_estimado" NUMERIC(10,2) DEFAULT 0
+CREATE TABLE "conversations" (
+  "id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+  "user_id" UUID,
+  "tool_id" INT,
+  "start_date" TIMESTAMP DEFAULT (now()),
+  "end_date" TIMESTAMP,
+  "status" conversation_status,
+  "mode" VARCHAR(20) DEFAULT 'Standard',
+  "estimated_cost" NUMERIC(10,2) DEFAULT 0
 );
 
-CREATE TABLE "mensajes" (
-  "id_mensaje" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "id_conversacion" UUID,
-  "remitente" tipo_remitente,
-  "contenido" TEXT NOT NULL,
-  "fecha_envio" TIMESTAMP DEFAULT (now())
+CREATE TABLE "messages" (
+  "id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+  "conversation_id" UUID,
+  "sender" sender_type,
+  "content" TEXT NOT NULL,
+  "sent_at" TIMESTAMP DEFAULT (now())
 );
 
 CREATE TABLE "vector_embeddings" (
-  "id_embedding" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "id_mensaje" UUID,
-  "id_documento" UUID,
-  "id_agente" UUID,
+  "id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+  "message_id" UUID,
+  "document_id" UUID,
+  "agent_id" UUID,
   "vector" vector(1536) NOT NULL,
-  "fecha_creacion" TIMESTAMP DEFAULT (now())
+  "created_at" TIMESTAMP DEFAULT (now())
 );
 
-CREATE TABLE "documentos" (
-  "id_documento" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "id_agente" UUID,
-  "nombre" VARCHAR(255) NOT NULL,
-  "contenido_texto" TEXT NOT NULL,
+CREATE TABLE "documents" (
+  "id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+  "agent_id" UUID,
+  "name" VARCHAR(255) NOT NULL,
+  "text_content" TEXT NOT NULL,
   "vector" vector(1536) NOT NULL,
-  "id_herramienta" INT,
-  "fecha_creacion" TIMESTAMP DEFAULT (now())
+  "tool_id" INT,
+  "created_at" TIMESTAMP DEFAULT (now())
 );
 
-CREATE TABLE "permisos" (
-  "id_permiso" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "id_usuario" UUID,
-  "id_herramienta" INT,
-  "tipo_permiso" tipos_permisos,
-  "cantidad_interacciones" INT DEFAULT 0,
-  "fecha_actualizacion" DATE DEFAULT (now())
+CREATE TABLE "permissions" (
+  "id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+  "user_id" UUID,
+  "tool_id" INT,
+  "permission_type" permission_types,
+  "interaction_count" INT DEFAULT 0,
+  "updated_at" DATE DEFAULT (now())
 );
 
-CREATE TABLE "configuracion_agentes" (
-  "id_configuracion" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "id_agente" UUID,
-  "parametro" VARCHAR(100) NOT NULL,
-  "valor" TEXT NOT NULL,
-  "fecha_creacion" TIMESTAMP DEFAULT (now())
+CREATE TABLE "agent_configuration" (
+  "id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+  "agent_id" UUID,
+  "parameter" VARCHAR(100) NOT NULL,
+  "value" TEXT NOT NULL,
+  "created_at" TIMESTAMP DEFAULT (now())
 );
 
-CREATE INDEX "idx_usuario_email" ON "usuarios" ("email");
+CREATE INDEX "idx_user_email" ON "users" ("email");
 
-CREATE INDEX "idx_conversaciones_usuario" ON "conversaciones" ("id_usuario");
+CREATE INDEX "idx_conversations_user" ON "conversations" ("user_id");
 
-CREATE INDEX "idx_mensajes_conversacion" ON "mensajes" ("id_conversacion");
+CREATE INDEX "idx_messages_conversation" ON "messages" ("conversation_id");
 
 CREATE INDEX "idx_vector_embeddings" ON "vector_embeddings" USING IVFFLAT ("vector");
 
-CREATE INDEX "idx_documentos_vector" ON "documentos" USING IVFFLAT ("vector");
+CREATE INDEX "idx_documents_vector" ON "documents" USING IVFFLAT ("vector");
 
-CREATE INDEX "idx_uso_herramientas_fecha" ON "permisos" ("fecha_actualizacion");
+CREATE INDEX "idx_tool_usage_date" ON "permissions" ("updated_at");
 
-ALTER TABLE "configuracion_agentes" ADD FOREIGN KEY ("id_agente") REFERENCES "agentes" ("id_agente") ON DELETE CASCADE;
+ALTER TABLE "agent_configuration" ADD FOREIGN KEY ("agent_id") REFERENCES "agents" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "usuario_rol" ADD FOREIGN KEY ("id_usuario") REFERENCES "usuarios" ("id_usuario") ON DELETE CASCADE;
+ALTER TABLE "user_role" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "usuario_rol" ADD FOREIGN KEY ("id_rol") REFERENCES "roles" ("id_rol") ON DELETE CASCADE;
+ALTER TABLE "user_role" ADD FOREIGN KEY ("role_id") REFERENCES "roles" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "herramientas" ADD FOREIGN KEY ("id_creador") REFERENCES "usuarios" ("id_usuario") ON DELETE SET NULL;
+ALTER TABLE "tools" ADD FOREIGN KEY ("creator_id") REFERENCES "users" ("id") ON DELETE SET NULL;
 
-ALTER TABLE "agentes" ADD FOREIGN KEY ("id_herramienta") REFERENCES "herramientas" ("id_herramienta") ON DELETE CASCADE;
+ALTER TABLE "agents" ADD FOREIGN KEY ("tool_id") REFERENCES "tools" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "conversaciones" ADD FOREIGN KEY ("id_usuario") REFERENCES "usuarios" ("id_usuario") ON DELETE CASCADE;
+ALTER TABLE "conversations" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "conversaciones" ADD FOREIGN KEY ("id_herramienta") REFERENCES "herramientas" ("id_herramienta") ON DELETE CASCADE;
+ALTER TABLE "conversations" ADD FOREIGN KEY ("tool_id") REFERENCES "tools" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "mensajes" ADD FOREIGN KEY ("id_conversacion") REFERENCES "conversaciones" ("id_conversacion") ON DELETE CASCADE;
+ALTER TABLE "messages" ADD FOREIGN KEY ("conversation_id") REFERENCES "conversations" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "vector_embeddings" ADD FOREIGN KEY ("id_mensaje") REFERENCES "mensajes" ("id_mensaje") ON DELETE CASCADE;
+ALTER TABLE "vector_embeddings" ADD FOREIGN KEY ("message_id") REFERENCES "messages" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "documentos" ADD FOREIGN KEY ("id_herramienta") REFERENCES "herramientas" ("id_herramienta") ON DELETE CASCADE;
+ALTER TABLE "documents" ADD FOREIGN KEY ("tool_id") REFERENCES "tools" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "permisos" ADD FOREIGN KEY ("id_usuario") REFERENCES "usuarios" ("id_usuario") ON DELETE CASCADE;
+ALTER TABLE "permissions" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "permisos" ADD FOREIGN KEY ("id_herramienta") REFERENCES "herramientas" ("id_herramienta") ON DELETE CASCADE;
+ALTER TABLE "permissions" ADD FOREIGN KEY ("tool_id") REFERENCES "tools" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "vector_embeddings" ADD FOREIGN KEY ("id_documento") REFERENCES "documentos" ("id_documento") ON DELETE CASCADE;
+ALTER TABLE "vector_embeddings" ADD FOREIGN KEY ("document_id") REFERENCES "documents" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "vector_embeddings" ADD FOREIGN KEY ("id_agente") REFERENCES "agentes" ("id_agente") ON DELETE CASCADE;
+ALTER TABLE "vector_embeddings" ADD FOREIGN KEY ("agent_id") REFERENCES "agents" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "documentos" ADD FOREIGN KEY ("id_agente") REFERENCES "agentes" ("id_agente") ON DELETE CASCADE;
+ALTER TABLE "documents" ADD FOREIGN KEY ("agent_id") REFERENCES "agents" ("id") ON DELETE CASCADE;
