@@ -1,16 +1,30 @@
 version: '3'
 
-#TODO: Break up the tasks so you can select which to restart or rebuild
 vars:
-  GREEN: "\033[0;32m"
-  BLUE: "\033[0;34m"
-  RED: "\033[0;31m"
-  YELLOW: "\033[0;33m"
-  NC: "\033[0m" # No Color / Reset
+  GREEN: '\033[0;32m'
+  BLUE: '\033[0;34m'
+  RED: '\033[0;31m'
+  YELLOW: '\033[0;33m'
+  NC: '\033[0m' # No Color / Reset
 
 tasks:
-  init:
-    desc: "Initialize the environment: Clone repos if missing and install requisites."
+  # Setup tasks
+  install-deps:
+    desc: "Install all required dependencies"
+    silent: true
+    cmds:
+      - ./scripts/install-deps.sh
+      - echo -e "{{.GREEN}}Dependencies installed successfully{{.NC}}"
+
+  create-network:
+    desc: "Create the common Docker network"
+    silent: true
+    cmds:
+      - echo -e "{{.GREEN}}Creating common network...{{.NC}}"
+      - docker network create supabase_network_orchestrator-boti || true
+
+  clone-frontend:
+    desc: "Clone the frontend repository"
     silent: true
     cmds:
       - |
@@ -18,63 +32,154 @@ tasks:
           echo "Cloning frontend..."
           cd .. && git clone https://github.com/IA-UD-Tech/frontend-boti.git
         else
-          echo -e "${RED}Frontend already exists. Skipping clone.${NC}"
+          echo -e "{{.YELLOW}}Frontend already exists. Skipping clone.{{.NC}}"
         fi
+
+  clone-backend:
+    desc: "Clone the backend repository"
+    silent: true
+    cmds:
       - |
         if [ ! -d "../backend-boti" ]; then
           echo "Cloning backend..."
-          cd ..&& git clone https://github.com/IA-UD-Tech/backend-boti.git
+          cd .. && git clone https://github.com/IA-UD-Tech/backend-boti.git
         else
-          echo "Backend already exists. Skipping clone."
+          echo -e "{{.YELLOW}}Backend already exists. Skipping clone.{{.NC}}"
         fi
-        # cd ../backend-boti && 
-      - |
-        echo "Installing prerequisites..."
-        ./scripts/install-deps.sh
-      - |
-        echo -e "${GREEN}Creating common network...${NC}"
-        docker network create boti-net || true
+
+  init:
+    desc: "Initialize the environment: Clone repos if missing and install requisites"
+    deps: [clone-frontend, clone-backend, install-deps]
+    silent: true
+
+  # Supabase tasks
+  supabase-start:
+    desc: "Start Supabase services"
+    silent: true
+    cmds:
+      - echo -e "{{.GREEN}}Starting Supabase...{{.NC}}"
+      - supabase start
+
+  supabase-stop:
+    desc: "Stop Supabase services"
+    silent: true
+    cmds:
+      - echo -e "{{.RED}}Stopping Supabase...{{.NC}}"
+      - supabase stop
+
+  supabase-status:
+    desc: "Check Supabase status"
+    cmds:
+      - echo -e "{{.BLUE}}Supabase Status:{{.NC}}"
+      - supabase status
+
+  # Backend tasks
+  backend-build:
+    desc: "Build the backend container"
+    silent: true
+    cmds:
+      - echo -e "{{.GREEN}}Building backend...{{.NC}}"
+      - cd ../backend-boti && docker compose build
+
+  backend-start:
+    desc: "Start the backend service"
+    silent: true
+    cmds:
+      - echo -e "{{.GREEN}}Starting backend...{{.NC}}"
+      - cd ../backend-boti && docker compose up -d
+
+  backend-stop:
+    desc: "Stop the backend service"
+    silent: true
+    cmds:
+      - echo -e "{{.RED}}Stopping backend...{{.NC}}"
+      - cd ../backend-boti && docker compose down
+
+  backend-logs:
+    desc: "View backend logs"
+    cmds:
+      - cd ../backend-boti && docker compose logs -f
+
+  backend-restart:
+    desc: "Restart the backend service"
+    deps: [backend-stop, backend-start]
+    silent: true
+
+  # Frontend tasks
+  frontend-build:
+    desc: "Build the frontend container"
+    silent: true
+    cmds:
+      - echo -e "{{.GREEN}}Building frontend...{{.NC}}"
+      - cd ../frontend-boti && docker compose build
+
+  frontend-start:
+    desc: "Start the frontend service"
+    silent: true
+    cmds:
+      - echo -e "{{.GREEN}}Starting frontend...{{.NC}}"
+      - cd ../frontend-boti && docker compose up -d
+
+  frontend-stop:
+    desc: "Stop the frontend service"
+    silent: true
+    cmds:
+      - echo -e "{{.RED}}Stopping frontend...{{.NC}}"
+      - cd ../frontend-boti && docker compose down
+
+  frontend-logs:
+    desc: "View frontend logs"
+    cmds:
+      - cd ../frontend-boti && docker compose logs -f
+
+  frontend-restart:
+    desc: "Restart the frontend service"
+    deps: [frontend-stop, frontend-start]
+    silent: true
+
+  # Combined tasks
+  build-all:
+    desc: "Build all services"
+    deps: [backend-build, frontend-build]
+    silent: true
 
   start:
-    desc: "Start the environment: Start the backend and frontend."
+    desc: "Start all services"
+    deps: [supabase-start, backend-start, frontend-start]
     silent: true
-    vars:
-      REBUILD: false
     cmds:
-      - |
-        echo -e "${GREEN}Starting supabase...${NC}"
-        supabase start
-      - |
-        if [ "$REBUILD" = true ]; then
-        echo -e "${GREEN}Rebuilding backend...${NC}"
-        cd ../backend-boti && docker compose up -d --build
-        else
-        echo -e "${GREEN}Starting backend...${NC}"
-        pwd
-        cd ../backend-boti && docker compose up -d
-        fi
-      - |
-        if [ "$REBUILD" = true ]; then
-        echo -e "${GREEN}Rebuilding frontend...${NC}"
-        cd ../frontend-boti && docker compose up -d --build
-        else
-        echo -e "${GREEN}Starting frontend...${NC}"
-        cd ../frontend-boti && docker compose up -d
-        fi
+      - echo -e "{{.GREEN}}All services started successfully!{{.NC}}"
+      - echo -e "{{.BLUE}}Use 'task supabase-status' to view Supabase connection details{{.NC}}"
+
+  start-with-build:
+    desc: "Build and start all services"
+    deps: [build-all, start]
+    silent: true
 
   stop:
-    desc: "Stop the environment: Stop the backend and frontend."
+    desc: "Stop all services"
+    deps: [frontend-stop, backend-stop, supabase-stop]
     silent: true
     cmds:
+      - echo -e "{{.RED}}All services stopped{{.NC}}"
       - |
-        echo -e "${RED}Stopping frontend...${NC}"
-        cd ../frontend-boti && docker compose down
+        echo -e "{{.RED}}Removing common network...{{.NC}}"
+        docker network rm supabase_network_orchestrator-boti || true
+
+  restart:
+    desc: "Restart all services"
+    deps: [stop, start]
+    silent: true
+
+  status:
+    desc: "Check status of all services"
+    silent: true
+    cmds:
+      - echo -e "{{.BLUE}}Frontend Container Status:{{.NC}}"
       - |
-        echo -e "${RED}Stopping backend...${NC}"
-        cd ../backend-boti && docker compose down
+        docker ps --filter "name=frontend-boti" --format "{{.Names}}: {{.Status}}"
+      - echo -e "{{.BLUE}}Backend Container Status:{{.NC}}"
       - |
-        echo -e "${RED}Stopping supabase ...${NC}"
-        supabase stop
-      - |
-        echo -e "${RED}Removing common network...${NC}"
-        docker network rm boti-net || true
+        docker ps --filter "name=backend-boti" --format "{{.Names}}: {{.Status}}"
+      - echo -e "{{.BLUE}}Supabase Status:{{.NC}}"
+      - supabase status
