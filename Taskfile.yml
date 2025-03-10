@@ -26,6 +26,7 @@ tasks:
   clone-frontend:
     desc: "Clone the frontend repository"
     silent: true
+    internal: true
     cmds:
       - |
         if [ ! -d "../frontend-boti" ]; then
@@ -38,6 +39,7 @@ tasks:
   clone-backend:
     desc: "Clone the backend repository"
     silent: true
+    internal: true
     cmds:
       - |
         if [ ! -d "../backend-boti" ]; then
@@ -102,7 +104,9 @@ tasks:
 
   backend-restart:
     desc: "Restart the backend service"
-    deps: [backend-stop, backend-start]
+    cmds:
+      - task: backend-stop
+      - task: backend-start
     silent: true
 
   # Frontend tasks
@@ -134,18 +138,22 @@ tasks:
 
   frontend-restart:
     desc: "Restart the frontend service"
-    deps: [frontend-stop, frontend-start]
+    cmds:
+      - task: frontend-stop
+      - task: frontend-start
     silent: true
 
   # Combined tasks
   build-all:
     desc: "Build all services"
-    deps: [backend-build, frontend-build]
+    cmds:
+      - task: backend-build
+      - task: frontend-build
     silent: true
 
   start:
     desc: "Start all services"
-    deps: [supabase-start, backend-start, frontend-start]
+    deps: [create-network, supabase-start, backend-start, frontend-start]
     silent: true
     cmds:
       - echo -e "{{.GREEN}}All services started successfully!{{.NC}}"
@@ -153,7 +161,9 @@ tasks:
 
   start-with-build:
     desc: "Build and start all services"
-    deps: [build-all, start]
+    cmds:
+      - task: build-all
+      - task: start
     silent: true
 
   stop:
@@ -168,7 +178,9 @@ tasks:
 
   restart:
     desc: "Restart all services"
-    deps: [stop, start]
+    cmds:
+      - task: stop
+      - task: start
     silent: true
 
   status:
