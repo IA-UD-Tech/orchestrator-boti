@@ -153,9 +153,11 @@ tasks:
 
   start:
     desc: "Start all services"
-    deps: [create-network, supabase-start, backend-start, frontend-start]
+    deps: [create-network, supabase-start]
     silent: true
     cmds:
+      - task: backend-start
+      - task: frontend-start
       - echo -e "{{.GREEN}}All services started successfully!{{.NC}}"
       - echo -e "{{.BLUE}}Use 'task supabase-status' to view Supabase connection details{{.NC}}"
 
